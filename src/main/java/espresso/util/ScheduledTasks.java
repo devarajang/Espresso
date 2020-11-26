@@ -14,8 +14,8 @@ import com.solab.iso8583.IsoMessage;
 import com.solab.iso8583.MessageFactory;
 import com.solab.iso8583.parse.ConfigParser;
 
-import espresso.iso.MoonlightServer;
-import moonlight.handlers.SignOnMessageHandler;
+import espresso.handlers.SignOnMessageHandler;
+import espresso.iso.EspressoServer;
 
 @Component
 public class ScheduledTasks {
@@ -44,7 +44,7 @@ public class ScheduledTasks {
 	public void reportCurrentTime() {
 		
 		log.info("The time is now {}", dateFormat.format(new Date()));
-		MoonlightServer.channels.forEach(channel -> {
+		EspressoServer.channels.forEach(channel -> {
 			IsoMessage isoMessage = messageHandler.createMessage(messageParams);
 			System.out.println("Channel Id " + channel.id());
 			channel.writeAndFlush(isoMessage);

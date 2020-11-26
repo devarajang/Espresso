@@ -10,7 +10,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-import espresso.iso.MoonlightServer;
+import espresso.iso.EspressoServer;
 
 /**
  * @author deva
@@ -28,8 +28,8 @@ public class EspressoApp {
 	public CommandLineRunner commandLineRunner(ApplicationContext ctx) {
 		return args -> {
 
-			MoonlightServer moonlightServer = ctx.getBean(MoonlightServer.class);
-			moonlightServer.run();
+			EspressoServer espressoServer = ctx.getBean(EspressoServer.class);
+			espressoServer.run();
 
 		};
 	}

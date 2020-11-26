@@ -17,6 +17,7 @@ import com.solab.iso8583.IsoMessage;
 import com.solab.iso8583.MessageFactory;
 import com.solab.iso8583.parse.ConfigParser;
 
+import espresso.handlers.MessageHandler;
 import espresso.util.MessageHandlerUtil;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -36,12 +37,11 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
 import io.netty.util.concurrent.GlobalEventExecutor;
-import moonlight.handlers.MessageHandler;
 
 @Component
-public class MoonlightServer {
+public class EspressoServer {
 
-	private static Logger logger = LoggerFactory.getLogger(MoonlightServer.class);
+	private static Logger logger = LoggerFactory.getLogger(EspressoServer.class);
 
 	private int port;
 
@@ -55,14 +55,14 @@ public class MoonlightServer {
 	
 	private MessageHandlerUtil util;
 
-	public MoonlightServer() {
+	public EspressoServer() {
 		
 	}
 
 	private SslContext getSslContext() throws SSLException {
 
-		File serverCert = new File("C:/temp/cert_test/example_com.crt");
-		File serverKey = new File("C:/temp/cert_test/example_com.key");
+		File serverCert = new File("/Users/deva/temp/cert_test/example_com.crt");
+		File serverKey = new File("/Users/deva/temp/cert_test/example_com.key");
 		String serverPass = "";
 		SslProvider sslProvider = SslProvider.JDK;
 		if (OpenSsl.isAvailable()) {
@@ -138,7 +138,7 @@ public class MoonlightServer {
 		try{
 			IsoMessage isomsg = messageFactory.parseMessage(iso_message.getBytes(), 0);
 			System.out.println(" channel count - " + channels.size());
-			for (Channel channel : MoonlightServer.channels) {
+			for (Channel channel : EspressoServer.channels) {
 				ChannelFuture future = channel.writeAndFlush(isomsg);
 		      //  future.addListener(ChannelFutureListener.CLOSE);
 		        System.out.println(isomsg.debugString());
@@ -154,7 +154,7 @@ public class MoonlightServer {
 		MessageHandler messHandler = util.getByType(0x800);
 		
 		IsoMessage isomsg = messHandler.createMessage(keyexData);
-		for (Channel channel : MoonlightServer.channels) {
+		for (Channel channel : EspressoServer.channels) {
 			channel.writeAndFlush(isomsg);
 	      //  future.addListener(ChannelFutureListener.CLOSE);
 	        System.out.println(isomsg.debugString());
@@ -179,7 +179,7 @@ public class MoonlightServer {
 		MessageHandler messHandler = util.getByType(0x800);
 		
 		IsoMessage isomsg = messHandler.createMessage(netadmData);
-		for (Channel channel : MoonlightServer.channels) {
+		for (Channel channel : EspressoServer.channels) {
 			channel.writeAndFlush(isomsg);
 	      //  future.addListener(ChannelFutureListener.CLOSE);
 	        System.out.println(isomsg.debugString());

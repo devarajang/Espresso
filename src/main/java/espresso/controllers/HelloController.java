@@ -9,13 +9,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.solab.iso8583.IsoMessage;
 
-import espresso.iso.MoonlightServer;
+import espresso.iso.EspressoServer;
 
 @RestController
 public class HelloController {
 	
 	@Autowired
-	MoonlightServer server;
+	EspressoServer server;
 
 	@GetMapping("/")
 	public String index() {
