@@ -5,6 +5,8 @@ package espresso.iso;
 
 import java.io.File;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.net.ssl.SSLException;
 
@@ -18,6 +20,7 @@ import com.solab.iso8583.MessageFactory;
 import com.solab.iso8583.parse.ConfigParser;
 
 import espresso.handlers.MessageHandler;
+import espresso.models.RequestResponseLog;
 import espresso.util.MessageHandlerUtil;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -41,22 +44,24 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 @Component
 public class EspressoServer {
 
+	public static ConcurrentHashMap<String, Set<RequestResponseLog>> request_log = 
+			new ConcurrentHashMap<String, Set<RequestResponseLog>>();
+
 	private static Logger logger = LoggerFactory.getLogger(EspressoServer.class);
 
 	private int port;
 
 	public static ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
-	
+
 	private MessageFactory<IsoMessage> messageFactory;
-	
+
 	@Value("${ISO_PORT:3030}")
 	private String isoPort;
-	
-	
+
 	private MessageHandlerUtil util;
 
 	public EspressoServer() {
-		
+
 	}
 
 	private SslContext getSslContext() throws SSLException {
@@ -106,9 +111,7 @@ public class EspressoServer {
 
 						}
 
-
 					}).option(ChannelOption.SO_BACKLOG, 128).childOption(ChannelOption.SO_KEEPALIVE, true);
-			
 
 			ChannelFuture f = b.bind(port).sync();
 			f.channel().closeFuture().sync();
@@ -135,29 +138,29 @@ public class EspressoServer {
 	public IsoMessage auth(Map<String, Object> authData) {
 //		String  iso_message = "0200F23A441188E1806200000000000000121649414900222876570000000000000098500520154521000926154521052005205411062D000001501010000010091111111111111014100000926TERM  ID[88888888888888ACCEPTOR NAME          CITY NAME 013ACCEPTOR NAME840011100000000100170184088888    840022B2IN0100PLSINT100  0  005PI0100754000926462293     014100000926 000000000000311       012000        12345678";
 		String iso_message = "0200F23A4401A8E19062000000000000001016494149002228765731000000000000000005291404410026261404410529052960119011010000005891111111111111374941490022287657=23051010000015500000000000001733PULTERM PUL12345SE     1005 convention plaza  st louis     MOUS013MERCHANT NAME84044F25BA5D86738130110000000002201729000         840022B2580001PULINT058  0  000";
-		try{
+		try {
 			IsoMessage isomsg = messageFactory.parseMessage(iso_message.getBytes(), 0);
 			System.out.println(" channel count - " + channels.size());
 			for (Channel channel : EspressoServer.channels) {
 				ChannelFuture future = channel.writeAndFlush(isomsg);
-		      //  future.addListener(ChannelFutureListener.CLOSE);
-		        System.out.println(isomsg.debugString());
+				// future.addListener(ChannelFutureListener.CLOSE);
+				System.out.println(isomsg.debugString());
 			}
 			return isomsg;
 		} catch (Exception e) {
 			throw new RuntimeException();
 		}
-		
+
 	}
 
 	public IsoMessage keyex(Map<String, Object> keyexData) {
 		MessageHandler messHandler = util.getByType(0x800);
-		
+
 		IsoMessage isomsg = messHandler.createMessage(keyexData);
 		for (Channel channel : EspressoServer.channels) {
 			channel.writeAndFlush(isomsg);
-	      //  future.addListener(ChannelFutureListener.CLOSE);
-	        System.out.println(isomsg.debugString());
+			// future.addListener(ChannelFutureListener.CLOSE);
+			System.out.println(isomsg.debugString());
 		}
 		return isomsg;
 //		String iso_message = "080082200000000000000400000100000008052217520600189510100022020036632D826A17939BA5CBA7A84BF771DCD51E7E";
@@ -177,12 +180,12 @@ public class EspressoServer {
 
 	public IsoMessage netadm(Map<String, Object> netadmData) {
 		MessageHandler messHandler = util.getByType(0x800);
-		
+
 		IsoMessage isomsg = messHandler.createMessage(netadmData);
 		for (Channel channel : EspressoServer.channels) {
 			channel.writeAndFlush(isomsg);
-	      //  future.addListener(ChannelFutureListener.CLOSE);
-	        System.out.println(isomsg.debugString());
+			// future.addListener(ChannelFutureListener.CLOSE);
+			System.out.println(isomsg.debugString());
 		}
 		return isomsg;
 	}

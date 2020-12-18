@@ -5,7 +5,6 @@ package espresso.iso;
 
 import java.io.DataOutputStream;
 import java.io.InputStream;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
@@ -16,7 +15,8 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import com.google.common.io.BaseEncoding;
+import org.apache.commons.lang3.StringUtils;
+
 import com.solab.iso8583.IsoMessage;
 import com.solab.iso8583.IsoType;
 import com.solab.iso8583.MessageFactory;
@@ -58,14 +58,97 @@ public class MessageTest {
 		return mfact.parseMessage(message.getBytes(), 0);
 	}
 	
+	public static void main_cvv(String[] args) {
+		String authData = "TDAV09918461063CV0711 949M";
+		int avIndex = authData.indexOf("AV");
+		// TDAV1171846    23CV0711 949M
+		String avsResult = "U";
+		if(avIndex > 0 ) {
+			int avsLength = Integer.parseInt(authData.substring( avIndex+ 2, avIndex + 4));
+			String avsData = authData.substring(avIndex+4, avIndex + 4 + avsLength);
+			String zipcode = null;
+			String addressLine1 = null;
+			if(avsData.length() > 9) {
+				zipcode = avsData.substring(0,9).trim();
+				addressLine1 = avsData.substring(9).trim();
+			} else {
+				zipcode = avsData.trim();					
+			}
+			
+			boolean zip9Match = false;
+			boolean zip5Match = false;
+			boolean addressMatch = false;
+			if(zipcode != null && zipcode.length() >=9  && zipcode.startsWith("9")) 
+			{
+				zip9Match = true;
+			}
+			if(zipcode != null && zipcode.length() <9  && zipcode.startsWith("5")) 
+			{
+				zip5Match = true;
+			}
+			if(addressLine1 != null && addressLine1.length() > 3 && addressLine1.startsWith("106")) {
+				addressMatch = true;
+			}
+			if(zip9Match && addressMatch) {
+				avsResult ="X";
+			} else if(zip5Match && addressMatch) {
+				avsResult ="Y";
+			} else if (zip9Match) {
+				avsResult ="W";
+			} else if (zip5Match) {
+				avsResult ="Z";
+			} else if (addressMatch){
+				avsResult ="A";
+			} else {
+				avsResult ="N";
+			}
+			avsResult = "AR01" + avsResult;
+		} else {
+			avsResult = "AR01U";
+		}
+		
+		int cvIndex = authData.indexOf("CV");
+		String cvvResult = "CR01P";
+		if(cvIndex > 0) {
+			int cvvLength = Integer.parseInt(authData.substring( cvIndex+ 2, cvIndex + 4));
+			String cvvIndicator = null;
+			String cvvRespType = null;
+			String cvvData = null;
+			if(cvvLength >= 1)
+				cvvIndicator = authData.substring(cvIndex+4, cvIndex + 4 + 1);			
+			if(cvvLength >=2)
+				cvvRespType = authData.substring(cvIndex+4+1, cvIndex + 4 + 2);
+			if(cvvLength >= 3 && cvvLength <=6)
+				cvvData = authData.substring(cvIndex+4+2, authData.length());
+			if (cvvLength == 7) 
+				cvvData = authData.substring(cvIndex+4+2, authData.length()-1);
+			System.out.println(cvvData + " " + cvvIndicator + "  " + cvvRespType);
+			if(cvvIndicator !=null ) {
+				if(cvvData != null) {
+					cvvData = cvvData.trim();
+					if(cvvData.equals(StringUtils.reverse(cvvData))) {
+						cvvResult = "CR01M";
+					} else {
+						cvvResult = "CR01N";
+					}
+				} else {
+					cvvResult = "CR01N";
+				}
+			}
+			
+		}
+		System.out.println("avsResult " + avsResult);
+		System.out.println("cvvResult " + cvvResult);
+		
+	}
+	
 	public static void main(String[] args) throws Exception {
 	// 0100	//IsoMessage message = parseSignOnMessage("0100F23A4401A8E190E2000000000000001016494149002228765700000000000000990005211348500026021348500521052130009011010000005891111111111111374941490022287657=230510100000155000000000000017151       1              1005 convention plaza  st louis     MOUS021MERCHANT NAME@URL.COM840481958CA4F58876E0032040111010000A25101729000         840022B2580001PULINT058  0  000");
 	// 0120	//IsoMessage message = parseSignOnMessage("0120F23A4401AAE180F2000000000000001016494149002228765700000000000000990005211348500026021348500521052130009011010000005891111111111111374941490022287657=23051010000015500000000000001715911       1              1005 convention plaza  st louis     MOUS021MERCHANT NAME@URL.COM8400032040111010000A25101729000         8400044031022B2580001PULINT058     000");
 	// 0121	//IsoMessage message = parseSignOnMessage("0121F23A4401AAE18072000000000000003016494149002228765700000000000000000005211346560026011346560521052159629021010000005891111111111111374941490022287657=23051010000015500000000000001714911       1              1005 convention plaza  st louis     MOUS021MERCHANT NAME@URL.COM8400111000008001101729000         8400044031022B2580001PPEINT058     036TDAV30627006   St Pa               R060ND50PS46TR161234567890123456FC03987NR15654321012345   PD0202");
 	// 0200 //IsoMessage message = parseSignOnMessage("0200F23A4401A8E19062000000000000001016494149002228765700200000000000600005211318460025951318460521052160119011010000005891111111111111374941490022287657=230510100000155000000000000017081       1              1005 convention plaza  st louis     MOUS013MERCHANT NAME840481958CA4F58876E0110000000002201729000         840022B2580001PULINT058  0  000");
 	// 0220  //IsoMessage message = parseSignOnMessage("0220F23A4401AAE18072000000000000001016494149002228765700200000000000600005211318460025951318460521052160119011010000005891111111111111374941490022287657=23051010000015500000000000001708911       1              1005 convention plaza  st louis     MOUS013MERCHANT NAME8400110000000002201729000         8400044031022B2580001PULINT058     000");
-		IsoMessage message = parseSignOnMessage("0210F23A04010AF0806200000000000000321654214398182145460000000000000012341125094500094500094500112511250601010000012872020112500010606894603461074270122237QOLO  BILL             954-123-9876 FLUS10QOLO  BILL8400111012100725001706000926300000840020B2IN0128VNTINT128  0030TDAV1390255    3718CV0711 367M038PR29V0010013020329140184820595546PI0100604321818461074     032803321818T300329140183697      00100591\n"
-				+ "");
+		IsoMessage message = parseSignOnMessage("0100F23E440108E1806200000000000000321649414901305806130000000000000026001123233632851759183632112322111123654006010100000136803282385175904770626000350200043882WALMART EGIFT CARD     BENTONVILLE  ARUS018WALMART EGIFT CARD8400111012100725001705000303030000840022B2IN0136VNTINT136  0  028TDAV1171846    23CV0711 949M038PR29V0010013820328849447623085841PI0100604851759405523     032823851759W380328849923671      00100591");
 		System.out.println(message.debugString());
 		print(message);
 		

@@ -4,7 +4,6 @@
 package espresso.handlers;
 
 import java.util.Map;
-import java.util.Random;
 
 import com.solab.iso8583.IsoMessage;
 import com.solab.iso8583.IsoType;
@@ -16,19 +15,19 @@ import espresso.util.Util;
  * @author deva
  *
  */
-public class FinancialMessageHandler extends TxnMessageHandler {
+public class AuthAdviceHandler implements MessageHandler {
 
 	private MessageFactory<IsoMessage> mfact;
 	
 	
 	
-	public FinancialMessageHandler(MessageFactory<IsoMessage> mfact) {
+	public AuthAdviceHandler(MessageFactory<IsoMessage> mfact) {
 		this.mfact = mfact;
 	}
 
 	@Override
 	public IsoMessage createMessage(Map<String, Object> messageParams) {
-		IsoMessage isomsg = mfact.newMessage(0x200);
+		IsoMessage isomsg = mfact.newMessage(0x100);
 		isomsg.setValue(2, messageParams.get("cardnumber"), IsoType.LLVAR, 0);// 4757570163847923
 		isomsg.setValue(3, "000000", IsoType.NUMERIC, 6);
 		isomsg.setValue(4, "000000000500", IsoType.NUMERIC, 12);
@@ -63,7 +62,7 @@ public class FinancialMessageHandler extends TxnMessageHandler {
 	public IsoMessage handleMessage(IsoMessage isoMessage) {
 		IsoMessage response = mfact.newMessage(isoMessage.getType()+16);
 		
-		String responseFields = "2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 25, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 53, 54, 55, 58, 59, 61, 63, 67, 98, 100, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 113, 114, 120, 121, 122, 123, 124, 125, 126, 127, 128";
+		String responseFields = "2, 3, 4, 5, 6, 7, 9, 11, 12, 13, 15, 28, 29, 37, 38, 39, 44, 46, 49, 50, 53, 55, 58, 61, 63, 64, 128";
 		String[] strings = responseFields.split(",");
 		for (String string : strings) {
 			int fieldNum = Integer.parseInt(string.trim());
@@ -71,39 +70,7 @@ public class FinancialMessageHandler extends TxnMessageHandler {
 				response.copyFieldsFrom(isoMessage, fieldNum);
 			}
 		}
-		String cardNumber = isoMessage.getField(2).toString();
-		int rand = Integer.parseInt(""+cardNumber.charAt(15));
-		
-		switch(rand) {
-			case 0:
-			case 1:
-			case 2:
-			case 3:
-				response.setValue(39, "00", IsoType.ALPHA, 2);
-				break;
-			case 4:
-			case 5:
-				response.setValue(39, "06", IsoType.ALPHA, 2);
-                break;
-            case 6:            	
-            case 7:
-            	response.setValue(39, "51", IsoType.ALPHA, 2);
-                break;
-            case 8:
-            	response.setValue(39, "59", IsoType.ALPHA, 2);
-                break;
-            case 9:
-            	response.setValue(39, "96", IsoType.ALPHA, 2);
-                break;
-		
-		}
-		if(isoMessage.hasField(123)) {
-			String authData = isoMessage.getField(123).toString();
-			String avsResult = getAVSResult(authData);
-			String cvvResult = getCVVResult(authData);
-			String tdResult = "TD" + avsResult + cvvResult;
-			response.setValue(123, tdResult, IsoType.LLLVAR, tdResult.length());
-		}
+		response.setValue(39, "00", IsoType.ALPHA, 2);
 
 		System.out.println(response.debugString());
 		return response;
@@ -111,8 +78,7 @@ public class FinancialMessageHandler extends TxnMessageHandler {
 
 	@Override
 	public boolean canHandle(IsoMessage isoMessage) {
-		System.out.println("message type " + (isoMessage.getType() == 0x200));
-		if(isoMessage.getType() == 0x200 || isoMessage.getType() == 0x201) {
+		if(isoMessage.getType() == 0x120 || isoMessage.getType() == 0x121) {
 			return true;
 		}
 		return false;

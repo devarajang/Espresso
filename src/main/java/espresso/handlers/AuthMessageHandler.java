@@ -16,19 +16,19 @@ import espresso.util.Util;
  * @author deva
  *
  */
-public class FinancialMessageHandler extends TxnMessageHandler {
+public class AuthMessageHandler extends TxnMessageHandler {
 
 	private MessageFactory<IsoMessage> mfact;
 	
 	
 	
-	public FinancialMessageHandler(MessageFactory<IsoMessage> mfact) {
+	public AuthMessageHandler(MessageFactory<IsoMessage> mfact) {
 		this.mfact = mfact;
 	}
 
 	@Override
 	public IsoMessage createMessage(Map<String, Object> messageParams) {
-		IsoMessage isomsg = mfact.newMessage(0x200);
+		IsoMessage isomsg = mfact.newMessage(0x100);
 		isomsg.setValue(2, messageParams.get("cardnumber"), IsoType.LLVAR, 0);// 4757570163847923
 		isomsg.setValue(3, "000000", IsoType.NUMERIC, 6);
 		isomsg.setValue(4, "000000000500", IsoType.NUMERIC, 12);
@@ -63,7 +63,7 @@ public class FinancialMessageHandler extends TxnMessageHandler {
 	public IsoMessage handleMessage(IsoMessage isoMessage) {
 		IsoMessage response = mfact.newMessage(isoMessage.getType()+16);
 		
-		String responseFields = "2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 25, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 53, 54, 55, 58, 59, 61, 63, 67, 98, 100, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 113, 114, 120, 121, 122, 123, 124, 125, 126, 127, 128";
+		String responseFields = "2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 25, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43,  45, 46, 47, 48, 49, 50, 51, 53, 54, 55,57, 58, 59,60, 61, 63, 67, 98, 100, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 113,  120,  122, 123, 124, 125, 126, 127, 128";
 		String[] strings = responseFields.split(",");
 		for (String string : strings) {
 			int fieldNum = Integer.parseInt(string.trim());
@@ -71,8 +71,8 @@ public class FinancialMessageHandler extends TxnMessageHandler {
 				response.copyFieldsFrom(isoMessage, fieldNum);
 			}
 		}
-		String cardNumber = isoMessage.getField(2).toString();
-		int rand = Integer.parseInt(""+cardNumber.charAt(15));
+		Random random = new Random();
+		int rand = random.nextInt(10);
 		
 		switch(rand) {
 			case 0:
@@ -97,6 +97,9 @@ public class FinancialMessageHandler extends TxnMessageHandler {
                 break;
 		
 		}
+		
+		// 0100F23E440108E1806200000000000000321649414901305806130000000000000026001123233632851759183632112322111123654006010100000136803282385175904770626000350200043882WALMART EGIFT CARD     BENTONVILLE  ARUS018WALMART EGIFT CARD8400111012100725001705000303030000840022B2IN0136VNTINT136  0  028TDAV1171846    23CV0711 949M038PR29V0010013820328849447623085841PI0100604851759405523     032823851759W380328849923671      00100591
+		
 		if(isoMessage.hasField(123)) {
 			String authData = isoMessage.getField(123).toString();
 			String avsResult = getAVSResult(authData);
@@ -104,6 +107,7 @@ public class FinancialMessageHandler extends TxnMessageHandler {
 			String tdResult = "TD" + avsResult + cvvResult;
 			response.setValue(123, tdResult, IsoType.LLLVAR, tdResult.length());
 		}
+		
 
 		System.out.println(response.debugString());
 		return response;
@@ -111,8 +115,7 @@ public class FinancialMessageHandler extends TxnMessageHandler {
 
 	@Override
 	public boolean canHandle(IsoMessage isoMessage) {
-		System.out.println("message type " + (isoMessage.getType() == 0x200));
-		if(isoMessage.getType() == 0x200 || isoMessage.getType() == 0x201) {
+		if(isoMessage.getType() == 0x100 || isoMessage.getType() == 0x101) {
 			return true;
 		}
 		return false;
