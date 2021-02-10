@@ -3,11 +3,15 @@
  */
 package espresso.handlers;
 
+import java.time.temporal.IsoFields;
 import java.util.Map;
 import java.util.Random;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.solab.iso8583.IsoMessage;
 import com.solab.iso8583.IsoType;
+import com.solab.iso8583.IsoValue;
 import com.solab.iso8583.MessageFactory;
 
 import espresso.util.Util;
@@ -74,7 +78,16 @@ public class FinancialMessageHandler extends TxnMessageHandler {
 		String cardNumber = isoMessage.getField(2).toString();
 		int rand = Integer.parseInt(""+cardNumber.charAt(15));
 		
-		switch(rand) {
+		Random rand1 = new Random();
+		int approval_code = rand1.nextInt(89999) + 100000;
+		response.setValue(38, Integer.toString(approval_code) , IsoType.ALPHA, 6);
+		Double txnAmt = Double.parseDouble(isoMessage.getField(4).getValue().toString());
+		String processingFlags  = isoMessage.getAt(63).toString();
+		if(!StringUtils.isEmpty(processingFlags) &&  processingFlags.substring(2, 1) == "1" && txnAmt == 43.21 ) {
+			response.setValue(39, "10", IsoType.ALPHA, 2);		
+			response.setValue(54,"0958840C0000000025000991840C0000000031220902840C000000000000", IsoType.LLLVAR,  "0958840C0000000025000991840C0000000031220902840C000000000000".length());
+		} else {
+			switch(rand) {
 			case 0:
 			case 1:
 			case 2:
@@ -96,7 +109,10 @@ public class FinancialMessageHandler extends TxnMessageHandler {
             	response.setValue(39, "96", IsoType.ALPHA, 2);
                 break;
 		
+			}
 		}
+			
+		
 		if(isoMessage.hasField(123)) {
 			String authData = isoMessage.getField(123).toString();
 			String avsResult = getAVSResult(authData);

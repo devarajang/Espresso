@@ -80,7 +80,7 @@ public class ISOMessageHandler extends ChannelInboundHandlerAdapter {
 		if(messageHandler instanceof SignOnMessageHandler) {
 			System.out.println("Skipping - add to log");
 		} else {
-			Set<RequestResponseLog> logSet = EspressoServer.request_log.get(incomingMessage.getField(3).toString());
+			Set<RequestResponseLog> logSet = EspressoServer.request_log.get(incomingMessage.getField(2).toString());
 			if(logSet == null) {
 				logSet = new TreeSet<RequestResponseLog>();
 				EspressoServer.request_log.put(incomingMessage.getField(2).toString() , logSet);

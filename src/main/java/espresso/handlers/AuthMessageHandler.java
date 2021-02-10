@@ -71,8 +71,14 @@ public class AuthMessageHandler extends TxnMessageHandler {
 				response.copyFieldsFrom(isoMessage, fieldNum);
 			}
 		}
-		Random random = new Random();
-		int rand = random.nextInt(10);
+//		Random random = new Random();
+//		int rand = random.nextInt(10);
+		String cardNumber = isoMessage.getField(2).toString();
+		int rand = Integer.parseInt(""+cardNumber.charAt(15));
+		
+		Random rand1 = new Random();
+		int approval_code = rand1.nextInt(89999) + 100000;
+		response.setValue(38, Integer.toString(approval_code) , IsoType.ALPHA, 6);
 		
 		switch(rand) {
 			case 0:

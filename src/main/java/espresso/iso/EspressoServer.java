@@ -66,8 +66,8 @@ public class EspressoServer {
 
 	private SslContext getSslContext() throws SSLException {
 
-		File serverCert = new File("/Users/deva/temp/cert_test/example_com.crt");
-		File serverKey = new File("/Users/deva/temp/cert_test/example_com.key");
+		File serverCert = new File("C:/temp/cert_test/example_com.crt");
+		File serverKey = new File("C:/temp/cert_test/example_com.key");
 		String serverPass = "";
 		SslProvider sslProvider = SslProvider.JDK;
 		if (OpenSsl.isAvailable()) {
